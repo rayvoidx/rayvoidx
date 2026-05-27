@@ -18,15 +18,11 @@
 
 ## 🚀 Flagship Project — Social Trend Agent
 
-LLM이 스스로 **무엇을 조사할지 결정**하고 → MCP 도구를 **자율 선택·호출**하고 → 결과를 **자체 평가**하며 → 과거 분석에서 **학습**하는 자율 트렌드 인텔리전스 시스템.
+LLM이 스스로 **무엇을 조사할지 결정**하고 → MCP 도구를 **자율 선택·호출**하고 → 결과를 **자체 평가**하며 → 과거 분석에서 **학습**하는 자율 트렌드 인텔리전스 시스템
 
 <div align="center">
 
 https://github.com/user-attachments/assets/806e3668-c61e-4d21-bed3-ba150b0b0871
-
-[![GitHub](https://img.shields.io/badge/GitHub-rayvoidx%2Fsocial--trend--agent-181717?style=for-the-badge&logo=github)](https://github.com/rayvoidx/social-trend-agent)
-[![v1.2.0](https://img.shields.io/badge/Release-v1.2.0-3b82f6?style=for-the-badge)](https://github.com/rayvoidx/social-trend-agent/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/rayvoidx/social-trend-agent/ci.yml?branch=main&label=CI&style=for-the-badge)](https://github.com/rayvoidx/social-trend-agent/actions)
 
 </div>
 
