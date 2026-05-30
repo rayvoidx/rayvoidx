@@ -18,53 +18,92 @@
 
 ## 🚀 Flagship Project — Social Trend Agent
 
-LLM이 스스로 **무엇을 조사할지 결정**하고 → MCP 도구를 **자율 선택·호출**하고 → 결과를 **자체 평가**하며 → 과거 분석에서 **학습**하는 자율 트렌드 인텔리전스 시스템
+### 자율 멀티 에이전트 트렌드 인텔리전스 시스템
 
-<div align="center">
+에이전트가 자율적으로 계획, 수집, 분석, 보고하는 트렌드 분석 시스템 — LangGraph 오케스트레이션, MCP 도구 프로토콜, 에이전틱 도구 호출 루프 기반
 
-https://github.com/user-attachments/assets/806e3668-c61e-4d21-bed3-ba150b0b0871
+<br/>
+
+[![v1.3.0](https://img.shields.io/badge/Release-v1.3.0-blue?style=for-the-badge)](https://github.com/rayvoidx/social-trend-agent/releases)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-0.2+-FF6F00?style=for-the-badge)](https://langchain-ai.github.io/langgraph/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+
+<br/>
+
+[![License](https://img.shields.io/badge/License-BSD--3-green?style=flat-square)](./LICENSE)
 
 </div>
 
-### 아키텍처
+---
+
+## 시스템 설명
+
+대부분의 "AI 에이전트"는 단순한 LLM 래퍼입니다. **이 시스템은 다릅니다** — 스스로 계획하고, 평가하고, 학습합니다.
 
 ```
-사용자 입력 (키워드 or @채널핸들/youtube.com/...)
+기존 방식:   사용자 → 프롬프트 → LLM → 출력 (원샷)
+
+이 시스템:   사용자 입력 → LLM이 적합한 에이전트 라우팅 → MCP 도구로 멀티 플랫폼 수집
+             → LLM이 분석 → LLM이 품질 자체 평가(critic) → 미달 시 보강(refine, 최대 3회)
+             → 과거 분석 메모리에서 학습 → 리포트 + 후속 질문 제안
+```
+
+**Plan → Execute → Evaluate → Refine** 자율 루프가 핵심입니다 — LLM이 결과 품질을 4차원으로 자체 평가하고, 기준 미달 시 스스로 보강하며, 과거 분석에서 **학습**합니다. 크리에이터 URL을 입력하면 채널 DNA 분석으로 자동 분기합니다.
+
+---
+
+## 아키텍처
+
+```
+사용자 입력 (키워드 or @채널핸들 / youtube.com/... )
     │
-    ├──[트렌드 쿼리]──────────────────────────────────────────┐
-    │                                                      │
-    │  [크리에이터 URL 감지 → Creator Intelligence 분기]        │
-    │          │                                           │
-    ▼          ▼                                           ▼
-FastAPI (:8000) ──SSE 스트리밍──► React (:5173)
-    │                   │
-    │                   └── Creator DNA Card
-    │                        (구독자/평균뷰/콘텐츠 기둥/
-    │                          콘텐츠 초안 A/B/C)
-    ▼
-3-Gear Orchestrator (LangGraph)
+    ├── [트렌드 쿼리] ─────────────────────────────────┐
+    │                                                  │
+    │   [크리에이터 URL 감지(CREATOR_URL_RE) → 분기]    │
+    ▼                                                  ▼
+FastAPI(:8000) ── SSE 스트리밍 ──► React(:5173) ── Creator DNA Card
+    │                                                  ▲
+    ▼                                                  │
+3-Gear 오케스트레이터 (LangGraph)                       │
+  Gear 1 route_request → Gear 2 plan_workflow → Gear 3 execute
     ├── news_trend_agent   → Brave Search → 뉴스·커뮤니티
     ├── viral_video_agent  → Brave Search → YouTube·TikTok
     └── social_trend_agent → Brave Search → X·Instagram
-              │
-              ▼
-    AgenticToolLoop (최대 8회 반복)
-    LLM ──→ [brave_search | fetch_url | youtube_trending | ...]
-    LLM ──→ SelfEvaluator (품질 게이트)
-    LLM ──→ AgentMemory (토픽별 학습 누적)
-              │
-Creator Intelligence Pipeline (/api/creator/analyze)
-    ├── YouTube Data API v3 → 채널 통계 (구독자·평균뷰·참여율)
-    ├── Brave Search fallback → 채널 공개 데이터
-    └── LLM DNA 분석 → top_topics / content_pillars / audience_profile
-                      → ContentDraft × 3 (title A/B/C + script + hashtags)
-              │
-    ┌─────────┴──────────┐
+          │
+          ▼  각 에이전트 StateGraph:
+   router → collect → normalize → analyze → summarize
+                                    → critic ⇄ refine (최대 3회, 4차원 품질 게이트)
+                                    → report → notify
+          │
+          ├── Creator Intelligence (/api/creator/analyze)
+          │     YouTube Data API v3 → Brave fallback → LLM DNA 분석 ──┘
+          │     → top_topics / content_pillars / ContentDraft ×3
+          │
+          ├── Competitor Radar (/api/radar)  — 키워드 모니터(최대 5) + 변화 감지 알림
+          ├── Signal Archive (/api/signal-archive) — 토픽 진화·크로스 신시사이즈·주간 다이제스트
+          └── 일일 스케줄러 (src/core/scheduler.py) — 인기 검색어 자동 분석 → Slack
+          │
+    ┌─────┴──────────────┐
     ▼                    ▼
-Supabase PostgreSQL    Redis (:6380)
-(insights, memory,     (SSE 히스토리,
- query_logs, creators)  rate limit)
+Supabase PostgreSQL    Redis(:6380)        Prometheus(:9091) ← /metrics
+(insights, agent_memory,  (SSE 히스토리,    AgentTracer: 노드별 실행 추적
+ query_logs, creators)     rate limit)
 ```
+
+### 자기개선 루프 (Self-Critique)
+
+핵심 혁신: LLM이 자신의 분석 품질을 평가하고, 기준 미달 시 스스로 보강합니다.
+
+```
+summarize → critic (4차원 LLM 품질 평가) → score < 0.6 ? → refine → critic (재평가)
+                                          score ≥ 0.6 ? → report (보고서 생성)
+                                          최대 3회 반복
+```
+
+4차원 품질 평가: **커버리지** · **사실 정확성** · **실행 가능성** · **균형/편향**
 
 ### 릴리스 타임라인
 
