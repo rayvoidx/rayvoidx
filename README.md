@@ -22,6 +22,8 @@
 
 에이전트가 자율적으로 계획, 수집, 분석, 보고하는 트렌드 분석 시스템 — LangGraph 오케스트레이션, MCP 도구 프로토콜, 에이전틱 도구 호출 루프 기반
 
+<img width="1278" height="726" alt="image" src="https://github.com/user-attachments/assets/8a8d79f7-adb1-41eb-91bc-a1add2321e4d" />
+
 <br/>
 
 [![v1.3.0](https://img.shields.io/badge/Release-v1.3.0-blue?style=for-the-badge)](https://github.com/rayvoidx/social-trend-agent/releases)
